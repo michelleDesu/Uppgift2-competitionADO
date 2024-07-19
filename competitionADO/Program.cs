@@ -16,18 +16,35 @@ namespace competitionADO
                 try
                 {
                     connection.Open();
-                    Console.WriteLine("Anslutning lyckades!");
+                    Console.WriteLine("Connection succeded!\n");
 
                     DeleteCompetitions(connection);
                     AddSampleData(connection);
-                    GetAllCompetitions(connection);
                     GetAllCompetitionsWithParticipants(connection);
+
+                    String compName = "E-Sport";
+                    getCompById(connection, compName);
+                    getCompById(connection, "Dans");
 
                 }
                 catch (SqlException ex)
                 {
-                    Console.WriteLine($"Anslutningsfel: {ex.Message}");
+                    Console.WriteLine($"Connectionerror: {ex.Message}");
                 }
+            }
+        }
+
+        private static void getCompById(SqlConnection connection, string compName)
+        {
+            Console.WriteLine("\n\tTävling via ett id: \n");
+            Guid ? eSportGuid = GetCompetitionGuid(connection, compName);
+            if (eSportGuid.HasValue)
+            {
+                GetCompetitionById(connection, eSportGuid.Value);
+            }
+            else
+            {
+                Console.WriteLine($"Tävlingen {compName} hittades inte.");
             }
         }
 
@@ -38,7 +55,7 @@ namespace competitionADO
             using (SqlCommand command = new SqlCommand(deleteParticipantsQuery, connection))
             {
                 int rowsAffected = command.ExecuteNonQuery();
-                Console.WriteLine($"{rowsAffected} rows deleted in the Participant table.");
+                //Console.WriteLine($"{rowsAffected} rows deleted in the Participant table.");
             }
 
             string selectDeleteQuery = "delete FROM Competitions";
@@ -46,7 +63,7 @@ namespace competitionADO
             using (SqlCommand command = new SqlCommand(selectDeleteQuery, connection))
             {
                 int rowsAffected = command.ExecuteNonQuery();
-                Console.WriteLine($"{rowsAffected} rows deleted in the competitions table.");
+                //Console.WriteLine($"{rowsAffected} rows deleted in the competitions table.");
 
             }
         }
@@ -62,9 +79,6 @@ namespace competitionADO
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
 
-                    Console.WriteLine("CompId\tName");
-                    Console.WriteLine("------------------");
-
                     while (reader.Read())
                     {
                         Console.WriteLine($"{reader["Name"]}");
@@ -75,6 +89,9 @@ namespace competitionADO
 
         private static void GetAllCompetitionsWithParticipants(SqlConnection connection)
         {
+
+            Console.WriteLine("\n\tAlla tävlingar samt dess deltagare:\n");
+
             string selectCompetitionsQuery = @"
         SELECT c.CompId, c.Name AS CompetitionName, p.Name AS ParticipantName
         FROM Competitions c
@@ -88,30 +105,77 @@ namespace competitionADO
                 {
                     Guid currentCompId = Guid.Empty;
                     bool firstRow = true;
+                    bool hasParticipants = false;
 
                     while (reader.Read())
                     {
                         Guid compId = reader.GetGuid(reader.GetOrdinal("CompId"));
                         string competitionName = Convert.ToString(reader["CompetitionName"]);
-                        string participantName = Convert.ToString(reader["ParticipantName"]);
+                        string participantName = reader.IsDBNull(reader.GetOrdinal("ParticipantName")) ? "Inga deltagare" : Convert.ToString(reader["ParticipantName"]);
 
                         if (compId != currentCompId)
                         {
-                            // Skriv ut tävlingsnamnet när vi når en ny tävling
                             if (!firstRow)
                             {
-                                Console.WriteLine(); // Tom rad mellan tävlingar
+                               
+                                Console.WriteLine();
                             }
                             Console.WriteLine($"Tävling: {competitionName}");
                             Console.WriteLine("Deltagare:");
 
                             currentCompId = compId;
                             firstRow = false;
+                            hasParticipants = false;
                         }
 
-                        // Skriv ut deltagarnamn
-                        Console.WriteLine($"- {participantName}");
+                        if (participantName != null)
+                        {
+                            Console.WriteLine($"- {participantName}");
+                            hasParticipants = true;
+                        }
                     }
+                }
+            }
+        }
+
+        private static void GetCompetitionById(SqlConnection connection, Guid competitionId)
+        {
+            string selectCompetitionQuery = @"
+    SELECT c.CompId, c.Name AS CompetitionName, p.Name AS ParticipantName
+    FROM Competitions c
+    LEFT JOIN Participant p ON c.CompId = p.CompId
+    WHERE c.CompId = @CompetitionId
+    ORDER BY p.Name
+";
+
+            using (SqlCommand command = new SqlCommand(selectCompetitionQuery, connection))
+            {
+                command.Parameters.AddWithValue("@CompetitionId", competitionId);
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    bool firstRow = true;
+                    bool hasParticipants = false;
+
+                    while (reader.Read())
+                    {
+                        string competitionName = Convert.ToString(reader["CompetitionName"]);
+                        string participantName = reader.IsDBNull(reader.GetOrdinal("ParticipantName")) ? "Inga deltagare" : Convert.ToString(reader["ParticipantName"]);
+
+                        if (firstRow)
+                        {
+                            Console.WriteLine($"Tävling: {competitionName}");
+                            Console.WriteLine("Deltagare:");
+                            firstRow = false;
+                        }
+
+                        if (participantName != "Inga deltagare" || hasParticipants)
+                        {
+                            Console.WriteLine($"- {participantName}");
+                            hasParticipants = true;
+                        }
+                    }
+
                 }
             }
         }
@@ -127,7 +191,7 @@ namespace competitionADO
             using (SqlCommand command = new SqlCommand(insertCompetitionsQuery, connection))
             {
                 int rowsAffected = command.ExecuteNonQuery();
-                Console.WriteLine($"{rowsAffected} rows inserted in the competitions table.");
+                //Console.WriteLine($"{rowsAffected} rows inserted in the competitions table.");
 
             }
 
@@ -158,7 +222,7 @@ namespace competitionADO
                 command.Parameters.Add(paramSimningGuid);
 
                 int rowsAffected = command.ExecuteNonQuery();
-                Console.WriteLine($"{rowsAffected} rad(er) infogades i Participant-tabellen.");
+                //Console.WriteLine($"{rowsAffected} rad(er) infogades i Participant-tabellen.");
             }
 
         }
