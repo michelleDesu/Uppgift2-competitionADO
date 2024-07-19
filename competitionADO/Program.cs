@@ -19,16 +19,16 @@ namespace competitionADO
                     Console.WriteLine("Connection succeded!\n");
 
                     DeleteCompetitions(connection);
-                    AddSampleData(connection);
+                    AddSeedData(connection);
                     Console.WriteLine("\n\t* Alla tävlingar med dess deltagare:\n");
                     GetAllCompetitionsWithParticipants(connection);
 
                     String compName = "E-Sport";
                     Console.WriteLine("\n\t* Exempel på en sökning på ett existerande tävlingsid:\n");
-                    getCompById(connection, compName);
+                    getCompByName(connection, compName);
 
                     Console.WriteLine("\n\t* Exempel på en sökning på ett tävlingsid som inte existerar:\n");
-                    getCompById(connection, "Dans");
+                    getCompByName(connection, "Dans");
 
                 }
                 catch (SqlException ex)
@@ -38,12 +38,12 @@ namespace competitionADO
             }
         }
 
-        private static void getCompById(SqlConnection connection, string compName)
+        private static void getCompByName(SqlConnection connection, string compName)
         {
-            Guid ? eSportGuid = GetCompetitionGuid(connection, compName);
-            if (eSportGuid.HasValue)
+            Guid ? compGuid = GetCompetitionGuid(connection, compName);
+            if (compGuid.HasValue)
             {
-                GetCompetitionById(connection, eSportGuid.Value);
+                GetCompetitionById(connection, compGuid.Value);
             }
             else
             {
@@ -183,7 +183,7 @@ namespace competitionADO
             }
         }
 
-        private static void AddSampleData(SqlConnection connection)
+        private static void AddSeedData(SqlConnection connection)
         {
             string insertCompetitionsQuery = @"
                         INSERT INTO Competitions (Name) VALUES ('E-Sport');
