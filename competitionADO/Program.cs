@@ -20,10 +20,14 @@ namespace competitionADO
 
                     DeleteCompetitions(connection);
                     AddSampleData(connection);
+                    Console.WriteLine("\n\t* Alla tävlingar med dess deltagare:\n");
                     GetAllCompetitionsWithParticipants(connection);
 
                     String compName = "E-Sport";
+                    Console.WriteLine("\n\t* Exempel på en sökning på ett existerande tävlingsid:\n");
                     getCompById(connection, compName);
+
+                    Console.WriteLine("\n\t* Exempel på en sökning på ett tävlingsid som inte existerar:\n");
                     getCompById(connection, "Dans");
 
                 }
@@ -36,7 +40,6 @@ namespace competitionADO
 
         private static void getCompById(SqlConnection connection, string compName)
         {
-            Console.WriteLine("\n\tTävling via ett id: \n");
             Guid ? eSportGuid = GetCompetitionGuid(connection, compName);
             if (eSportGuid.HasValue)
             {
@@ -90,7 +93,7 @@ namespace competitionADO
         private static void GetAllCompetitionsWithParticipants(SqlConnection connection)
         {
 
-            Console.WriteLine("\n\tAlla tävlingar samt dess deltagare:\n");
+           // Console.WriteLine("\n\tAlla tävlingar samt dess deltagare:\n");
 
             string selectCompetitionsQuery = @"
         SELECT c.CompId, c.Name AS CompetitionName, p.Name AS ParticipantName
